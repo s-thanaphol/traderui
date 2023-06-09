@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"text/template"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/gorilla/mux"
 	"github.com/quickfixgo/traderui/basic"
 	"github.com/quickfixgo/traderui/oms"
@@ -169,17 +171,28 @@ func (c tradeClient) deleteOrder(w http.ResponseWriter, r *http.Request) {
 	c.writeOrderJSON(w, order)
 }
 
-func (c tradeClient) getOrders(w http.ResponseWriter, r *http.Request) {
+// func (c tradeClient) getOrders(w http.ResponseWriter, r *http.Request) {
+// 	outgoingJSON, err := c.OrdersAsJSON()
+// 	if err != nil {
+// 		log.Printf("[ERROR] err = %+v\n", err)
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	w.Header().Set("Content-Type", "application/json")
+// 	fmt.Fprint(w, outgoingJSON)
+// }
+func (c tradeClient) getOrders(r *gin.Context) {
 	outgoingJSON, err := c.OrdersAsJSON()
 	if err != nil {
 		log.Printf("[ERROR] err = %+v\n", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		r.JSON(http.StatusBadRequest, gin.H{"error": "err getOrders funtion"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprint(w, outgoingJSON)
+	fmt.Println(outgoingJSON)
 }
+
 
 func (c tradeClient) getExecutions(w http.ResponseWriter, r *http.Request) {
 	outgoingJSON, err := c.ExecutionsAsJSON()
@@ -227,27 +240,29 @@ func (c tradeClient) newSecurityDefintionRequest(w http.ResponseWriter, r *http.
 	}
 }
 
-func (c tradeClient) newOrder(w http.ResponseWriter, r *http.Request) {
+func (c tradeClient) newOrder(r *gin.Context) {
+	fmt.Println("start new order")
 	var order oms.Order
-	decoder := json.NewDecoder(r.Body)
+	decoder := json.NewDecoder(r.Request.Body)
 	err := decoder.Decode(&order)
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		r.JSON(http.StatusBadRequest, gin.H{"error": "decode order err"})
 		return
 	}
 
+	fmt.Println(order)
 	if sessionID, ok := c.SessionIDs[order.Session]; ok {
 		order.SessionID = sessionID
 	} else {
 		log.Println("[ERROR] Invalid SessionID")
-		http.Error(w, "Invalid SessionID", http.StatusBadRequest)
+		r.JSON(http.StatusBadRequest, gin.H{"error": "Invalid SessionID"})
 		return
 	}
 
 	if err = order.Init(); err != nil {
 		log.Printf("[ERROR] %v\n", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		r.JSON(http.StatusBadRequest, gin.H{"error": ""})
 		return
 	}
 
@@ -258,14 +273,15 @@ func (c tradeClient) newOrder(w http.ResponseWriter, r *http.Request) {
 	msg, err := c.NewOrderSingle(order)
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		r.JSON(http.StatusBadRequest, gin.H{"error": ""})
 		return
 	}
 
 	err = quickfix.SendToTarget(msg, order.SessionID)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		r.JSON(http.StatusBadRequest, gin.H{"error": ""})
+		return
 	}
 }
 
@@ -308,20 +324,23 @@ func main() {
 	}
 	defer initiator.Stop()
 
-	router := mux.NewRouter().StrictSlash(true)
+	router := gin.Default()//mux.NewRouter().StrictSlash(true)
 
-	router.HandleFunc("/orders", app.newOrder).Methods("POST")
-	router.HandleFunc("/orders", app.getOrders).Methods("GET")
-	router.HandleFunc("/orders/{id:[0-9]+}", app.getOrder).Methods("GET")
-	router.HandleFunc("/orders/{id:[0-9]+}", app.deleteOrder).Methods("DELETE")
+	router.GET("orders", app.getOrders)
+	router.POST("/orders", app.newOrder)
+	//router.HandleFunc("/orders", app.newOrder).Methods("POST")
+	//router.HandleFunc("/orders", app.getOrders).Methods("GET")
+	// router.HandleFunc("/orders/{id:[0-9]+}", app.getOrder).Methods("GET")
+	// router.HandleFunc("/orders/{id:[0-9]+}", app.deleteOrder).Methods("DELETE")
 
-	router.HandleFunc("/executions", app.getExecutions).Methods("GET")
-	router.HandleFunc("/executions/{id:[0-9]+}", app.getExecution).Methods("GET")
+	// router.HandleFunc("/executions", app.getExecutions).Methods("GET")
+	// router.HandleFunc("/executions/{id:[0-9]+}", app.getExecution).Methods("GET")
 
-	router.HandleFunc("/securitydefinitionrequest", app.newSecurityDefintionRequest).Methods("POST")
+	// router.HandleFunc("/securitydefinitionrequest", app.newSecurityDefintionRequest).Methods("POST")
 
-	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
-	router.HandleFunc("/", app.traderView)
+	// router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
+	// router.HandleFunc("/", app.traderView)
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	//log.Fatal(http.ListenAndServe(":8080", router))
+	router.Run()
 }
