@@ -1,3 +1,9 @@
+//	@title			Traderui API
+//	@version		1.0
+//	@termsOfService	http://somewhere.com/
+
+//	@schemes	https http
+
 package main
 
 import (
@@ -12,6 +18,10 @@ import (
 	"text/template"
 
 	"github.com/gin-gonic/gin"
+
+	docs "github.com/quickfixgo/traderui/docs"
+    swaggerfiles "github.com/swaggo/files"
+    ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/gorilla/mux"
 	"github.com/quickfixgo/traderui/basic"
@@ -171,17 +181,11 @@ func (c tradeClient) deleteOrder(w http.ResponseWriter, r *http.Request) {
 	c.writeOrderJSON(w, order)
 }
 
-// func (c tradeClient) getOrders(w http.ResponseWriter, r *http.Request) {
-// 	outgoingJSON, err := c.OrdersAsJSON()
-// 	if err != nil {
-// 		log.Printf("[ERROR] err = %+v\n", err)
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	w.Header().Set("Content-Type", "application/json")
-// 	fmt.Fprint(w, outgoingJSON)
-// }
+//	@Summary		getOrders
+//	@Description	get all order
+//	@Produce		json
+//	@Success		200	{array} oms.OrderForSwag	
+//	@Router			/orders [get]
 func (c tradeClient) getOrders(r *gin.Context) {
 	outgoingJSON, err := c.OrdersAsJSON()
 	if err != nil {
@@ -190,9 +194,10 @@ func (c tradeClient) getOrders(r *gin.Context) {
 		return
 	}
 
-	fmt.Println(outgoingJSON)
+	var m []oms.Order
+	json.Unmarshal([]byte(outgoingJSON), &m)
+	r.JSON(http.StatusOK, m)
 }
-
 
 func (c tradeClient) getExecutions(w http.ResponseWriter, r *http.Request) {
 	outgoingJSON, err := c.ExecutionsAsJSON()
@@ -240,6 +245,13 @@ func (c tradeClient) newSecurityDefintionRequest(w http.ResponseWriter, r *http.
 	}
 }
 
+// @Summary newOrder
+// @Description new 1 Order api
+// @Accept json
+// @Produce json
+// @Param Order body oms.OrderForSwag true "Order data for sending to executor "
+// @Success 200 {string} sting "OK"
+// @Router /orders [post]
 func (c tradeClient) newOrder(r *gin.Context) {
 	fmt.Println("start new order")
 	var order oms.Order
@@ -283,6 +295,8 @@ func (c tradeClient) newOrder(r *gin.Context) {
 		r.JSON(http.StatusBadRequest, gin.H{"error": ""})
 		return
 	}
+
+	r.JSON(http.StatusOK, "send order successful")
 }
 
 func main() {
@@ -324,10 +338,11 @@ func main() {
 	}
 	defer initiator.Stop()
 
-	router := gin.Default()//mux.NewRouter().StrictSlash(true)
-
+	router := gin.Default() //mux.NewRouter().StrictSlash(true)
+	docs.SwaggerInfo.BasePath = ""
 	router.GET("orders", app.getOrders)
 	router.POST("/orders", app.newOrder)
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	//router.HandleFunc("/orders", app.newOrder).Methods("POST")
 	//router.HandleFunc("/orders", app.getOrders).Methods("GET")
 	// router.HandleFunc("/orders/{id:[0-9]+}", app.getOrder).Methods("GET")
@@ -342,5 +357,5 @@ func main() {
 	// router.HandleFunc("/", app.traderView)
 
 	//log.Fatal(http.ListenAndServe(":8080", router))
-	router.Run()
+	router.Run(":8080")
 }
