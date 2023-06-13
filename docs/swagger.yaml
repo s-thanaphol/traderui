@@ -62,15 +62,41 @@ paths:
             type: array
       summary: getOrders
     post:
-      description: send 1 order
+      consumes:
+      - application/json
+      description: new 1 Order api
+      parameters:
+      - description: 'Order data for sending to executor '
+        in: body
+        name: Order
+        required: true
+        schema:
+          $ref: '#/definitions/oms.OrderForSwag'
       produces:
       - application/json
       responses:
         "200":
-          description: send 1 order
+          description: OK
           schema:
             type: string
       summary: newOrder
+  /orders/:id:
+    get:
+      description: get 1 order
+      parameters:
+      - description: id of order
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/oms.OrderForSwag'
+      summary: getOrder
 schemes:
 - https
 - http

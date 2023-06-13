@@ -31,16 +31,56 @@
                 }
             },
             "post": {
-                "description": "send 1 order",
+                "description": "new 1 Order api",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "summary": "newOrder",
+                "parameters": [
+                    {
+                        "description": "Order data for sending to executor ",
+                        "name": "Order",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/oms.OrderForSwag"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "send 1 order",
+                        "description": "OK",
                         "schema": {
                             "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/orders/:id": {
+            "get": {
+                "description": "get 1 order",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "getOrder",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of order",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/oms.OrderForSwag"
                         }
                     }
                 }

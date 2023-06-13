@@ -88,9 +88,9 @@ func (c tradeClient) traderView(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (c tradeClient) fetchRequestedOrder(r *http.Request) (*oms.Order, error) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
+func (c tradeClient) fetchRequestedOrder(r *gin.Context) (*oms.Order, error) {
+	tmp := r.Param("id")
+	id, err := strconv.Atoi(tmp)
 	if err != nil {
 		panic(err)
 	}
@@ -108,29 +108,37 @@ func (c tradeClient) fetchRequestedExecution(r *http.Request) (*oms.Execution, e
 	return c.GetExecution(id)
 }
 
-func (c tradeClient) getOrder(w http.ResponseWriter, r *http.Request) {
+//	@Summary		getOrder
+//	@Description	get 1 order
+//	@Produce		json
+//  @param id path int true "id of order"
+//	@Success		200	{object} oms.OrderForSwag	
+//	@Router			/orders/:id [get]
+func (c tradeClient) getOrder(r *gin.Context) {
 	c.RLock()
 	defer c.RUnlock()
 
 	order, err := c.fetchRequestedOrder(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		r.JSON(http.StatusBadRequest, http.StatusNotFound)
 		return
 	}
 
-	c.writeOrderJSON(w, order)
+	c.writeOrderJSON(r, order)
 }
 
-func (c tradeClient) writeOrderJSON(w http.ResponseWriter, order *oms.Order) {
+func (c tradeClient) writeOrderJSON(r *gin.Context, order *oms.Order) {
+	fmt.Println(order)
 	outgoingJSON, err := json.Marshal(order)
 	if err != nil {
 		log.Printf("[ERROR] err = %+v\n", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		r.JSON(http.StatusBadRequest, http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprint(w, string(outgoingJSON))
+	var m oms.Order
+	json.Unmarshal([]byte(outgoingJSON), &m)
+	r.JSON(http.StatusOK, m)
 }
 
 func (c tradeClient) getExecution(w http.ResponseWriter, r *http.Request) {
@@ -154,32 +162,32 @@ func (c tradeClient) getExecution(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(outgoingJSON))
 }
 
-func (c tradeClient) deleteOrder(w http.ResponseWriter, r *http.Request) {
-	c.Lock()
-	defer c.Unlock()
+// func (c tradeClient) deleteOrder(r *gin.Context) {
+// 	c.Lock()
+// 	defer c.Unlock()
 
-	order, err := c.fetchRequestedOrder(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
+// 	order, err := c.fetchRequestedOrder(r)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusNotFound)
+// 		return
+// 	}
 
-	clOrdID := c.AssignNextClOrdID(order)
-	msg, err := c.OrderCancelRequest(*order, clOrdID)
-	if err != nil {
-		log.Printf("[ERROR] err = %+v\n", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+// 	clOrdID := c.AssignNextClOrdID(order)
+// 	msg, err := c.OrderCancelRequest(*order, clOrdID)
+// 	if err != nil {
+// 		log.Printf("[ERROR] err = %+v\n", err)
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
 
-	err = quickfix.SendToTarget(msg, order.SessionID)
-	if err != nil {
-		log.Printf("[ERROR] err = %+v\n", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+// 	err = quickfix.SendToTarget(msg, order.SessionID)
+// 	if err != nil {
+// 		log.Printf("[ERROR] err = %+v\n", err)
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 	}
 
-	c.writeOrderJSON(w, order)
-}
+// 	c.writeOrderJSON(w, order)
+// }
 
 //	@Summary		getOrders
 //	@Description	get all order
@@ -295,8 +303,9 @@ func (c tradeClient) newOrder(r *gin.Context) {
 		r.JSON(http.StatusBadRequest, gin.H{"error": ""})
 		return
 	}
-
-	r.JSON(http.StatusOK, "send order successful")
+	fmt.Println(1)
+	r.JSON(http.StatusOK, "send 1 order successful")
+	fmt.Println(2)
 }
 
 func main() {
@@ -342,10 +351,12 @@ func main() {
 	docs.SwaggerInfo.BasePath = ""
 	router.GET("orders", app.getOrders)
 	router.POST("/orders", app.newOrder)
+	router.GET("orders/:id", app.getOrder)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	//router.HandleFunc("/orders", app.newOrder).Methods("POST")
 	//router.HandleFunc("/orders", app.getOrders).Methods("GET")
-	// router.HandleFunc("/orders/{id:[0-9]+}", app.getOrder).Methods("GET")
+
+	//router.HandleFunc("/orders/{id:[0-9]+}", app.getOrder).Methods("GET")
 	// router.HandleFunc("/orders/{id:[0-9]+}", app.deleteOrder).Methods("DELETE")
 
 	// router.HandleFunc("/executions", app.getExecutions).Methods("GET")
