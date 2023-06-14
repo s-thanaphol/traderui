@@ -264,6 +264,8 @@ func (c tradeClient) newOrder(r *gin.Context) {
 	fmt.Println("start new order")
 	var order oms.Order
 	decoder := json.NewDecoder(r.Request.Body)
+	fmt.Println(1)
+	fmt.Printf("%+v\n", decoder)
 	err := decoder.Decode(&order)
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)
@@ -271,7 +273,8 @@ func (c tradeClient) newOrder(r *gin.Context) {
 		return
 	}
 
-	fmt.Println(order)
+	fmt.Println(2)
+	fmt.Printf("%+v\n", order)
 	if sessionID, ok := c.SessionIDs[order.Session]; ok {
 		order.SessionID = sessionID
 	} else {
