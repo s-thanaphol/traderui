@@ -17,6 +17,7 @@ import (
 	fix50nos "github.com/quickfixgo/fix50/newordersingle"
 
 	fix42cxl "github.com/quickfixgo/fix42/ordercancelrequest"
+	fix44cxl "github.com/quickfixgo/fix44/ordercancelrequest"
 
 	"github.com/quickfixgo/quickfix"
 )
@@ -47,8 +48,8 @@ func (FIXFactory) NewOrderSingle(order oms.Order) (msg quickfix.Messagable, err 
 
 func (FIXFactory) OrderCancelRequest(order oms.Order, clOrdID string) (msg quickfix.Messagable, err error) {
 	switch order.SessionID.BeginString {
-	case quickfix.BeginStringFIX42:
-		msg, err = cxl42(order, clOrdID)
+	case quickfix.BeginStringFIX44:
+		msg, err = cxl44(order, clOrdID)
 	default:
 		err = errors.New("Unhandled BeginString")
 	}
@@ -156,6 +157,17 @@ func nos44(ord oms.Order) (quickfix.Messagable, error) {
 	nos.Set(field.NewOrderQty(ord.QuantityDecimal, 0))
 
 	return populateOrder(nos, ord)
+}
+
+func cxl44(ord oms.Order, clOrdID string) (quickfix.Messagable, error) {
+	cxl := fix44cxl.New(
+		field.NewOrigClOrdID(ord.ClOrdID),
+		field.NewClOrdID(clOrdID),
+		field.NewSide(ord.Side),
+		field.NewTransactTime(time.Now()),
+	)
+
+	return cxl, nil
 }
 
 func nos50(ord oms.Order) (quickfix.Messagable, error) {

@@ -349,7 +349,7 @@ func main() {
 	router.GET("orders", app.getOrders)
 	router.POST("/orders", app.newOrder)
 	router.GET("orders/:id", app.getOrder)
-	//router.DELETE("/orders/:id", app.deleteOrder)
+	router.DELETE("/orders/:id", app.deleteOrder)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	//router.HandleFunc("/orders", app.newOrder).Methods("POST")
 	//router.HandleFunc("/orders", app.getOrders).Methods("GET")
