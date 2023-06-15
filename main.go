@@ -262,7 +262,6 @@ func (c tradeClient) newSecurityDefintionRequest(w http.ResponseWriter, r *http.
 // @Success 200 {string} sting "OK"
 // @Router /orders [post]
 func (c tradeClient) newOrder(r *gin.Context) {
-	fmt.Println("start new order")
 	var order oms.Order
 	decoder := json.NewDecoder(r.Request.Body)
 	err := decoder.Decode(&order)
@@ -272,8 +271,6 @@ func (c tradeClient) newOrder(r *gin.Context) {
 		return
 	}
 
-	fmt.Println(2)
-	fmt.Printf("%+v\n", order)
 	if sessionID, ok := c.SessionIDs[order.Session]; ok {
 		order.SessionID = sessionID
 	} else {
@@ -305,9 +302,7 @@ func (c tradeClient) newOrder(r *gin.Context) {
 		r.JSON(http.StatusBadRequest, gin.H{"error": ""})
 		return
 	}
-	fmt.Println(1)
 	r.JSON(http.StatusOK, "send 1 order successful")
-	fmt.Println(2)
 }
 
 func main() {
@@ -354,7 +349,7 @@ func main() {
 	router.GET("orders", app.getOrders)
 	router.POST("/orders", app.newOrder)
 	router.GET("orders/:id", app.getOrder)
-	router.DELETE("/orders/:id", app.deleteOrder)
+	//router.DELETE("/orders/:id", app.deleteOrder)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	//router.HandleFunc("/orders", app.newOrder).Methods("POST")
 	//router.HandleFunc("/orders", app.getOrders).Methods("GET")
