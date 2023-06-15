@@ -113,6 +113,7 @@ func nos42(ord oms.Order) (quickfix.Messagable, error) {
 		field.NewOrdType(ord.OrdType),
 	)
 	nos.Set(field.NewOrderQty(ord.QuantityDecimal, 0))
+	nos.Set(field.NewTimeInForce(ord.TimeInForce))
 
 	return populateOrder(nos, ord)
 }

@@ -162,32 +162,33 @@ func (c tradeClient) getExecution(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(outgoingJSON))
 }
 
-// func (c tradeClient) deleteOrder(r *gin.Context) {
-// 	c.Lock()
-// 	defer c.Unlock()
+func (c tradeClient) deleteOrder(r *gin.Context) {
+	c.Lock()
+	defer c.Unlock()
 
-// 	order, err := c.fetchRequestedOrder(r)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusNotFound)
-// 		return
-// 	}
+	order, err := c.fetchRequestedOrder(r)
+	if err != nil {
+		r.JSON(http.StatusBadRequest, http.StatusNotFound)
+		return
+	}
 
-// 	clOrdID := c.AssignNextClOrdID(order)
-// 	msg, err := c.OrderCancelRequest(*order, clOrdID)
-// 	if err != nil {
-// 		log.Printf("[ERROR] err = %+v\n", err)
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
+	clOrdID := c.AssignNextClOrdID(order)
+	msg, err := c.OrderCancelRequest(*order, clOrdID)
+	if err != nil {
+		log.Printf("[ERROR] err = %+v\n", err)
+		r.JSON(http.StatusBadRequest, http.StatusInternalServerError)
+		return
+	}
 
-// 	err = quickfix.SendToTarget(msg, order.SessionID)
-// 	if err != nil {
-// 		log.Printf("[ERROR] err = %+v\n", err)
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 	}
+	err = quickfix.SendToTarget(msg, order.SessionID)
+	if err != nil {
+		log.Printf("[ERROR] err = %+v\n", err)
+		r.JSON(http.StatusBadRequest, http.StatusInternalServerError)
+		return
+	}
 
-// 	c.writeOrderJSON(w, order)
-// }
+	c.writeOrderJSON(r, order)
+}
 
 //	@Summary		getOrders
 //	@Description	get all order
@@ -264,8 +265,6 @@ func (c tradeClient) newOrder(r *gin.Context) {
 	fmt.Println("start new order")
 	var order oms.Order
 	decoder := json.NewDecoder(r.Request.Body)
-	fmt.Println(1)
-	fmt.Printf("%+v\n", decoder)
 	err := decoder.Decode(&order)
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)
@@ -355,12 +354,13 @@ func main() {
 	router.GET("orders", app.getOrders)
 	router.POST("/orders", app.newOrder)
 	router.GET("orders/:id", app.getOrder)
+	router.DELETE("/orders/:id", app.deleteOrder)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	//router.HandleFunc("/orders", app.newOrder).Methods("POST")
 	//router.HandleFunc("/orders", app.getOrders).Methods("GET")
 
 	//router.HandleFunc("/orders/{id:[0-9]+}", app.getOrder).Methods("GET")
-	// router.HandleFunc("/orders/{id:[0-9]+}", app.deleteOrder).Methods("DELETE")
+	//router.HandleFunc("/orders/{id:[0-9]+}", app.deleteOrder).Methods("DELETE")
 
 	// router.HandleFunc("/executions", app.getExecutions).Methods("GET")
 	// router.HandleFunc("/executions/{id:[0-9]+}", app.getExecution).Methods("GET")
