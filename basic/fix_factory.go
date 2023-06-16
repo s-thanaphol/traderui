@@ -48,6 +48,8 @@ func (FIXFactory) NewOrderSingle(order oms.Order) (msg quickfix.Messagable, err 
 
 func (FIXFactory) OrderCancelRequest(order oms.Order, clOrdID string) (msg quickfix.Messagable, err error) {
 	switch order.SessionID.BeginString {
+	case quickfix.BeginStringFIX42:
+		msg, err = cxl42(order, clOrdID)
 	case quickfix.BeginStringFIX44:
 		msg, err = cxl44(order, clOrdID)
 	default:
@@ -115,7 +117,9 @@ func nos42(ord oms.Order) (quickfix.Messagable, error) {
 	)
 	nos.Set(field.NewOrderQty(ord.QuantityDecimal, 0))
 	nos.Set(field.NewTimeInForce(ord.TimeInForce))
-
+	if ord.Text != "" {
+		nos.Set(field.NewText(ord.Text))
+	}
 	return populateOrder(nos, ord)
 }
 
@@ -155,6 +159,9 @@ func nos44(ord oms.Order) (quickfix.Messagable, error) {
 	nos.Set(field.NewSymbol(ord.Symbol))
 	nos.Set(field.NewHandlInst("1"))
 	nos.Set(field.NewOrderQty(ord.QuantityDecimal, 0))
+	if ord.Text != "" {
+		nos.Set(field.NewText(ord.Text))
+	}
 
 	return populateOrder(nos, ord)
 }

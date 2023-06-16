@@ -37,6 +37,7 @@ type Order struct {
 	StrikePrice        string             `json:"strike_price"`
 	StrikePriceDecimal decimal.Decimal    `json:"-"`
 	TimeInForce        enum.TimeInForce   `json:"time_in_force"`
+	Text			   string			  `json:"text"`
 }
 type OrderForSwag struct {
 	ID                 int                `json:"id"`
@@ -65,6 +66,7 @@ type OrderForSwag struct {
 	StrikePrice        string             `json:"strike_price"`
 	StrikePriceDecimal decimal.Decimal    `json:"-"`
 	TimeInForce        string             `json:"time_in_force"`
+	Text			   string			  `json:"text"`
 }
 
 // Init initialized computed fields on order from user input

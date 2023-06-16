@@ -3,6 +3,7 @@ package oms
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 type ClOrdIDGenerator interface {
@@ -78,8 +79,9 @@ func (om *OrderManager) GetByClOrdID(clOrdID string) (*Order, error) {
 }
 
 func (om *OrderManager) Save(order *Order) error {
+
 	order.ID = om.nextOrderID()
-	order.ClOrdID = om.clOrdID.Next()
+	order.ClOrdID = om.clOrdID.Next() + "_" + time.Now().String()
 
 	om.orders[order.ID] = order
 	om.clOrdIDLookup[order.ClOrdID] = order
@@ -95,7 +97,7 @@ func (om *OrderManager) SaveExecution(exec *Execution) error {
 }
 
 func (om *OrderManager) AssignNextClOrdID(order *Order) string {
-	clOrdID := om.clOrdID.Next()
+	clOrdID := om.clOrdID.Next() + "_" + time.Now().String()
 	om.clOrdIDLookup[clOrdID] = order
 	return clOrdID
 }

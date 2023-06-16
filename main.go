@@ -288,6 +288,7 @@ func (c tradeClient) newOrder(r *gin.Context) {
 	c.Lock()
 	_ = c.OrderManager.Save(&order)
 	c.Unlock()
+	
 
 	msg, err := c.NewOrderSingle(order)
 	if err != nil {
@@ -295,7 +296,7 @@ func (c tradeClient) newOrder(r *gin.Context) {
 		r.JSON(http.StatusBadRequest, gin.H{"error": ""})
 		return
 	}
-
+	
 	err = quickfix.SendToTarget(msg, order.SessionID)
 
 	if err != nil {
