@@ -124,10 +124,10 @@ func (c tradeClient) getOrder(r *gin.Context) {
 		return
 	}
 
-	c.writeOrderJSON(r, order)
+	c.writeOrderJSON(r, order,http.StatusOK)
 }
 
-func (c tradeClient) writeOrderJSON(r *gin.Context, order *oms.Order) {
+func (c tradeClient) writeOrderJSON(r *gin.Context, order *oms.Order,returnStatus int) {
 	fmt.Println(order)
 	outgoingJSON, err := json.Marshal(order)
 	if err != nil {
@@ -138,7 +138,7 @@ func (c tradeClient) writeOrderJSON(r *gin.Context, order *oms.Order) {
 
 	var m oms.Order
 	json.Unmarshal([]byte(outgoingJSON), &m)
-	r.JSON(http.StatusOK, m)
+	r.JSON(returnStatus, m)
 }
 
 func (c tradeClient) getExecution(w http.ResponseWriter, r *http.Request) {
@@ -162,6 +162,12 @@ func (c tradeClient) getExecution(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(outgoingJSON))
 }
 
+//	@Summary		deleteOrder
+//	@Description	cancel 1 order
+//	@Produce		json
+//  @param id path int true "id of order"
+//	@Success		202	{object} oms.OrderForSwag	
+//	@Router			/orders/:id [delete]
 func (c tradeClient) deleteOrder(r *gin.Context) {
 	c.Lock()
 	defer c.Unlock()
@@ -187,7 +193,7 @@ func (c tradeClient) deleteOrder(r *gin.Context) {
 		return
 	}
 
-	c.writeOrderJSON(r, order)
+	c.writeOrderJSON(r, order, http.StatusAccepted)
 }
 
 //	@Summary		getOrders
@@ -259,7 +265,7 @@ func (c tradeClient) newSecurityDefintionRequest(w http.ResponseWriter, r *http.
 // @Accept json
 // @Produce json
 // @Param Order body oms.OrderForSwag true "Order data for sending to executor "
-// @Success 200 {string} sting "OK"
+// @Success 202 {string} string "OK"
 // @Router /orders [post]
 func (c tradeClient) newOrder(r *gin.Context) {
 	var order oms.Order
@@ -303,7 +309,7 @@ func (c tradeClient) newOrder(r *gin.Context) {
 		r.JSON(http.StatusBadRequest, gin.H{"error": ""})
 		return
 	}
-	r.JSON(http.StatusOK, "send 1 order successful")
+	r.JSON(http.StatusAccepted, "send NewOrderSingle successful")
 }
 
 func main() {

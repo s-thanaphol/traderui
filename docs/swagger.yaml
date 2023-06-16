@@ -41,6 +41,10 @@ definitions:
         type: string
       symbol:
         type: string
+      text:
+        type: string
+      time_in_force:
+        type: string
     type: object
 info:
   contact: {}
@@ -75,12 +79,28 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
+        "202":
           description: OK
           schema:
             type: string
       summary: newOrder
   /orders/:id:
+    delete:
+      description: cancel 1 order
+      parameters:
+      - description: id of order
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/oms.OrderForSwag'
+      summary: deleteOrder
     get:
       description: get 1 order
       parameters:

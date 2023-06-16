@@ -57,7 +57,7 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
+                    "202": {
                         "description": "OK",
                         "schema": {
                             "type": "string"
@@ -85,6 +85,30 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/oms.OrderForSwag"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "cancel 1 order",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "deleteOrder",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of order",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
                         "schema": {
                             "$ref": "#/definitions/oms.OrderForSwag"
                         }
@@ -155,6 +179,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "symbol": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "time_in_force": {
                     "type": "string"
                 }
             }
